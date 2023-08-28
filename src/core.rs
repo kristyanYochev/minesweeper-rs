@@ -47,6 +47,14 @@ pub enum PlaceError {
     MineAlreadyAt(Coords),
 }
 
+#[derive(Debug, Error)]
+pub enum ToggleFlagError {
+    #[error(transparent)]
+    InvalidCoords(#[from] InvalidCoords),
+    #[error("The cell at {0:?} is already revealed")]
+    CellRevealed(Coords),
+}
+
 impl Game {
     pub fn new(
         field_width: usize,
@@ -87,6 +95,22 @@ impl Game {
             self.mines.push(at);
             Ok(())
         }
+    }
+
+    pub fn toggle_flag(&mut self, at: Coords) -> Result<(), ToggleFlagError> {
+        let cell = self.cell_at_mut(at)?;
+        match *cell {
+            CellState::Flagged => {
+                *cell = CellState::Hidden;
+            }
+            CellState::Hidden => {
+                *cell = CellState::Flagged;
+            }
+            CellState::Revealed(_) => {
+                return Err(ToggleFlagError::CellRevealed(at));
+            }
+        }
+        Ok(())
     }
 
     pub fn reveal(&mut self, at: Coords) -> Result<RevealResult, InvalidCoords> {
@@ -268,5 +292,36 @@ mod test {
             one_mine_game.reveal((2, 3)).unwrap(),
             RevealResult::GameOver
         );
+    }
+
+    #[test]
+    fn toggle_flag() {
+        let mut game = Game::empty(10, 10);
+
+        assert_eq!(game.cell_at((2, 3)).unwrap(), CellState::Hidden);
+        game.toggle_flag((2, 3)).unwrap();
+        assert_eq!(game.cell_at((2, 3)).unwrap(), CellState::Flagged);
+        game.toggle_flag((2, 3)).unwrap();
+        assert_eq!(game.cell_at((2, 3)).unwrap(), CellState::Hidden);
+
+        game.reveal((2, 3)).unwrap();
+        assert!(matches!(
+            game.cell_at((2, 3)).unwrap(),
+            CellState::Revealed(..)
+        ));
+
+        let res = game.toggle_flag((2, 3));
+        assert!(res.is_err());
+        assert!(matches!(
+            res.unwrap_err(),
+            ToggleFlagError::CellRevealed((2, 3))
+        ));
+
+        let res = game.toggle_flag((15, 12));
+        assert!(res.is_err());
+        assert!(matches!(
+            res.unwrap_err(),
+            ToggleFlagError::InvalidCoords(InvalidCoords { .. })
+        ));
     }
 }
