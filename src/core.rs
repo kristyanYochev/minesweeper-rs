@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use thiserror::Error;
 
 pub struct Game {
@@ -91,7 +90,25 @@ impl Game {
     }
 
     pub fn reveal(&mut self, at: Coords) -> Result<RevealResult, InvalidCoords> {
-        todo!();
+        self.index(at)?;
+
+        if self.is_mine_at(at) {
+            return Ok(RevealResult::GameOver);
+        }
+
+        self.floodfill_reveal(at);
+
+        let remaining_not_revealed = self
+            .cells
+            .iter()
+            .filter(|cell| matches!(cell, CellState::Hidden | CellState::Flagged))
+            .count();
+
+        if remaining_not_revealed == self.mine_count() {
+            Ok(RevealResult::Win)
+        } else {
+            Ok(RevealResult::Continue)
+        }
     }
 
     pub fn cell_at(&self, at: Coords) -> Result<CellState, InvalidCoords> {
@@ -108,6 +125,42 @@ impl Game {
 
     pub fn field_height(&self) -> usize {
         self.height
+    }
+
+    fn floodfill_reveal(&mut self, start: Coords) {
+        let mut to_reveal = Vec::new();
+        to_reveal.push(start);
+
+        while to_reveal.len() > 0 {
+            let (x, y) = to_reveal.pop().unwrap();
+
+            match self.cell_at((x, y)).unwrap() {
+                CellState::Hidden => {
+                    let neighbor_mines = self.count_neighbor_mines((x, y));
+                    *self.cell_at_mut((x, y)).unwrap() = CellState::Revealed(neighbor_mines as u8);
+                    if neighbor_mines == 0 {
+                        to_reveal.push((x.saturating_add(1).min(self.width - 1), y));
+                        to_reveal.push((x.saturating_sub(1).min(self.width - 1), y));
+                        to_reveal.push((x, y.saturating_add(1).min(self.height - 1)));
+                        to_reveal.push((x, y.saturating_sub(1).min(self.height - 1)));
+                    }
+                }
+                CellState::Flagged | CellState::Revealed(..) => {}
+            }
+        }
+    }
+
+    fn cell_at_mut(&mut self, at: Coords) -> Result<&mut CellState, InvalidCoords> {
+        let index = self.index(at)?;
+        Ok(self.cells.get_mut(index).unwrap())
+    }
+
+    fn count_neighbor_mines(&self, at: Coords) -> usize {
+        let (at_x, at_y) = at;
+        self.mines
+            .iter()
+            .filter(|(x, y)| x.abs_diff(at_x) <= 1 && y.abs_diff(at_y) <= 1)
+            .count()
     }
 
     fn is_mine_at(&self, at: Coords) -> bool {
