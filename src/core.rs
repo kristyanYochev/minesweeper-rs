@@ -348,6 +348,32 @@ mod test {
     }
 
     #[test]
+    fn reveal_not_showing_flags() {
+        let mut game = Game::empty(5, 5);
+        /*
+         * +-+-+-+-+-+
+         * |*|1| | | |
+         * +-+-+-+-+-+
+         * |1|1| |!| |
+         * +-+-+-+-+-+
+         * | | | | | |
+         * +-+-+-+-+-+
+         * | | | | | |
+         * +-+-+-+-+-+
+         * | | | | | |
+         * +-+-+-+-+-+
+         */
+        game.place_mine((0, 0)).unwrap();
+        game.toggle_flag((3, 1)).unwrap();
+
+        let res = game.reveal((2, 2)).unwrap();
+        assert_eq!(res, RevealResult::Continue);
+        assert_eq!(game.cell_at((2, 2)).unwrap(), CellState::Revealed(0));
+        assert_eq!(game.cell_at((0, 0)).unwrap(), CellState::Hidden);
+        assert_eq!(game.cell_at((3, 1)).unwrap(), CellState::Flagged);
+    }
+
+    #[test]
     fn toggle_flag() {
         let mut game = Game::empty(10, 10);
 
