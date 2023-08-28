@@ -82,7 +82,7 @@ impl Game {
     pub fn place_mine(&mut self, at: Coords) -> Result<(), PlaceError> {
         self.index(at)?;
 
-        if self.mines.contains(&at) {
+        if self.is_mine_at(at) {
             Err(PlaceError::MineAlreadyAt(at))
         } else {
             self.mines.push(at);
@@ -108,6 +108,10 @@ impl Game {
 
     pub fn field_height(&self) -> usize {
         self.height
+    }
+
+    fn is_mine_at(&self, at: Coords) -> bool {
+        self.mines.contains(&at)
     }
 
     fn index(&self, coords: Coords) -> Result<usize, InvalidCoords> {
