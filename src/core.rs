@@ -167,6 +167,23 @@ impl Game {
                         to_reveal.push((x.saturating_sub(1).min(self.width - 1), y));
                         to_reveal.push((x, y.saturating_add(1).min(self.height - 1)));
                         to_reveal.push((x, y.saturating_sub(1).min(self.height - 1)));
+
+                        to_reveal.push((
+                            x.saturating_add(1).min(self.width - 1),
+                            y.saturating_add(1).min(self.height - 1),
+                        ));
+                        to_reveal.push((
+                            x.saturating_sub(1).min(self.width - 1),
+                            y.saturating_add(1).min(self.height - 1),
+                        ));
+                        to_reveal.push((
+                            x.saturating_sub(1).min(self.width - 1),
+                            y.saturating_add(1).min(self.height - 1),
+                        ));
+                        to_reveal.push((
+                            x.saturating_sub(1).min(self.width - 1),
+                            y.saturating_sub(1).min(self.height - 1),
+                        ));
                     }
                 }
                 CellState::Flagged | CellState::Revealed(..) => {}
@@ -292,6 +309,42 @@ mod test {
             one_mine_game.reveal((2, 3)).unwrap(),
             RevealResult::GameOver
         );
+    }
+
+    #[test]
+    fn reveal_counting() {
+        let mut game = Game::empty(3, 3);
+        /*
+         * +-+-+-+
+         * | |2|*|
+         * +-+-+-+
+         * |1|3|*|
+         * +-+-+-+
+         * |1|*|2|
+         * +-+-+-+
+         */
+        game.place_mine((2, 0)).unwrap();
+        game.place_mine((2, 1)).unwrap();
+        game.place_mine((1, 2)).unwrap();
+
+        let res = game.reveal((0, 0)).unwrap();
+        assert_eq!(res, RevealResult::Continue);
+        assert_eq!(game.cell_at((0, 0)).unwrap(), CellState::Revealed(0));
+        assert_eq!(game.cell_at((1, 0)).unwrap(), CellState::Revealed(2));
+        assert_eq!(game.cell_at((0, 1)).unwrap(), CellState::Revealed(1));
+        assert_eq!(game.cell_at((1, 1)).unwrap(), CellState::Revealed(3));
+        assert_eq!(game.cell_at((0, 2)).unwrap(), CellState::Hidden);
+
+        let res = game.reveal((0, 2)).unwrap();
+        assert_eq!(res, RevealResult::Continue);
+        assert_eq!(game.cell_at((0, 2)).unwrap(), CellState::Revealed(1));
+
+        let res = game.reveal((2, 2)).unwrap();
+        assert_eq!(res, RevealResult::Win);
+        assert_eq!(game.cell_at((2, 2)).unwrap(), CellState::Revealed(2));
+        assert_eq!(game.cell_at((2, 0)).unwrap(), CellState::Hidden);
+        assert_eq!(game.cell_at((2, 1)).unwrap(), CellState::Hidden);
+        assert_eq!(game.cell_at((1, 2)).unwrap(), CellState::Hidden);
     }
 
     #[test]
