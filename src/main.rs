@@ -5,7 +5,12 @@ use std::io::{self, Write};
 
 fn main() {
     let mut game = init_game();
+    clear_screen();
     show_game(&game);
+}
+
+fn clear_screen() {
+    print!("\x1B[2J\x1B[1;1H");
 }
 
 fn init_game() -> Game {
