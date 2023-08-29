@@ -1,10 +1,42 @@
 mod core;
 
 use core::Game;
+use std::io::{self, Write};
 
 fn main() {
-    let mut game = Game::new(10, 10, 10).unwrap();
+    let mut game = init_game();
     show_game(&game);
+}
+
+fn init_game() -> Game {
+    loop {
+        let width = read_usize_with_message("Please enter width: ");
+        let height = read_usize_with_message("Please enter height: ");
+        let mine_count = read_usize_with_message("Please enter mine count: ");
+
+        let maybe_game = Game::new(width, height, mine_count);
+
+        match maybe_game {
+            Ok(game) => return game,
+            Err(err) => eprintln!("{err}"),
+        }
+    }
+}
+
+fn read_usize_with_message(message: &str) -> usize {
+    loop {
+        print!("{}", message);
+        io::stdout().flush().expect("Cannot flush stdout!");
+
+        let mut buffer = String::new();
+        io::stdin()
+            .read_line(&mut buffer)
+            .expect("Cannot read from stdin!");
+
+        if let Ok(n) = buffer.trim().parse() {
+            return n;
+        }
+    }
 }
 
 fn show_game(game: &Game) {
