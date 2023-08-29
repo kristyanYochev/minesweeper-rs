@@ -57,6 +57,11 @@ fn read_command() -> Command {
 
         let parts: Vec<_> = buffer.split(' ').collect();
 
+        if parts.len() != 3 {
+            println!("Not enough arguments!");
+            continue;
+        }
+
         match parts[0] {
             "r" | "reveal" => {
                 let x = match parts[1].trim().parse::<usize>() {
