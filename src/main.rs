@@ -18,11 +18,11 @@ fn game_loop(mut game: Game) {
                 Ok(RevealResult::Continue) => {}
                 Ok(RevealResult::GameOver) => {
                     println!("You lost :(");
-                    return;
+                    break;
                 }
                 Ok(RevealResult::Win) => {
                     println!("Congratulations! You won!");
-                    return;
+                    break;
                 }
                 Err(e) => {
                     println!("{e}");
@@ -36,6 +36,9 @@ fn game_loop(mut game: Game) {
             },
         }
     }
+
+    clear_screen();
+    show_game(&game);
 }
 
 #[derive(Debug)]
@@ -145,7 +148,7 @@ fn show_game(game: &Game) {
 
     let print_separator_line = || {
         for _ in 0..game.field_width() {
-            print!("+-");
+            print!("+---");
         }
         println!("+");
     };
@@ -156,10 +159,10 @@ fn show_game(game: &Game) {
         for x in 0..game.field_width() {
             print!("|");
             match game.cell_at((x, y)).unwrap() {
-                CellState::Hidden => print!("#"),
-                CellState::Flagged => print!("!"),
-                CellState::Revealed(0) => print!(" "),
-                CellState::Revealed(n) => print!("{}", n),
+                CellState::Hidden => print!("###"),
+                CellState::Flagged => print!("#!#"),
+                CellState::Revealed(0) => print!("   "),
+                CellState::Revealed(n) => print!(" {} ", n),
             }
         }
         println!("|");
